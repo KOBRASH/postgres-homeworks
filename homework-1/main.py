@@ -1,5 +1,5 @@
-"""Скрипт для заполнения данными таблиц в БД Postgres."""
 import psycopg2
+import csv
 
 # Параметры подключения к базе данных PostgreSQL
 db_params = {
@@ -13,17 +13,24 @@ db_params = {
 conn = psycopg2.connect(**db_params)
 cursor = conn.cursor()
 
-# Вставка данных в таблицу employees
-cursor.execute("INSERT INTO employees (first_name, last_name, department_id) VALUES ('John', 'Doe', 1)")
-cursor.execute("INSERT INTO employees (first_name, last_name, department_id) VALUES ('Jane', 'Smith', 2)")
+# Функция для вставки данных из CSV-файла в таблицу
+def insert_data_from_csv(cursor, table_name, csv_file):
+    with open(csv_file, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Пропустить заголовок, если он есть в CSV
+        for row in reader:
+            # Создайте строку SQL для вставки данных в таблицу
+            insert_query = f"INSERT INTO {table_name} VALUES ({','.join(['%s'] * len(row))})"
+            cursor.execute(insert_query, row)
 
-# Вставка данных в таблицу customers
-cursor.execute("INSERT INTO customers (first_name, last_name, email) VALUES ('Alice', 'Johnson', 'alice@example.com')")
-cursor.execute("INSERT INTO customers (first_name, last_name, email) VALUES ('Bob', 'Smith', 'bob@example.com')")
+# Вставка данных в таблицу employees из CSV-файла employees_data.csv
+insert_data_from_csv(cursor, "employees", "north_data/employees_data.csv")
 
-# Вставка данных в таблицу orders
-cursor.execute("INSERT INTO orders (order_date, customer_id, employee_id) VALUES ('2023-01-15', 1, 1)")
-cursor.execute("INSERT INTO orders (order_date, customer_id, employee_id) VALUES ('2023-02-20', 2, 2)")
+# Вставка данных в таблицу customers из CSV-файла customers_data.csv
+insert_data_from_csv(cursor, "customers", "north_data/customers_data.csv")
+
+# Вставка данных в таблицу orders из CSV-файла orders_data.csv
+insert_data_from_csv(cursor, "orders", "north_data/orders_data.csv")
 
 # Завершение транзакции и закрытие соединения
 conn.commit()
